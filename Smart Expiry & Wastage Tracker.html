@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Smart Expiry & Wastage Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef4f3;--card:#fff;--ink:#12302f;--mut:#5b7573;--line:#d5e2e0;--brand:#0f6b66;--red:#d92d20;--redbg:#fee4e2;--yel:#b7791f;--yelbg:#fef0c7;--grn:#1a7f4b;--grnbg:#d7f3e3;--exp:#475467;--expbg:#e4e7ec;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1f1e;--card:#152b2a;--ink:#e6f2f0;--mut:#93b0ad;--line:#254140;--brand:#4fc3bb;--red:#ff8a80;--redbg:#4a1d1a;--yel:#f5c76a;--yelbg:#46340f;--grn:#6fdca0;--grnbg:#13402b;--exp:#c4ccd6;--expbg:#2b3440}}
+:root[data-theme="dark"]{--bg:#0d1f1e;--card:#152b2a;--ink:#e6f2f0;--mut:#93b0ad;--line:#254140;--brand:#4fc3bb;--red:#ff8a80;--redbg:#4a1d1a;--yel:#f5c76a;--yelbg:#46340f;--grn:#6fdca0;--grnbg:#13402b;--exp:#c4ccd6;--expbg:#2b3440}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Bricolage Grotesque',system-ui,-apple-system,Segoe UI,sans-serif;line-height:1.45}
+header{background:var(--brand);color:#fff;padding:18px 16px 0}
+:root[data-theme="dark"] header,:root:not([data-theme="light"]) header{color:#0d1f1e}
+header h1{margin:0;font-size:1.35rem;font-weight:800}header p{margin:2px 0 12px;opacity:.85;font-size:.9rem}
+nav{display:flex;gap:4px;overflow-x:auto;max-width:900px;margin:0 auto}
+nav button{flex:1;min-width:max-content;border:0;background:transparent;color:inherit;font:inherit;font-weight:600;padding:10px 14px;border-radius:10px 10px 0 0;cursor:pointer;opacity:.8}
+nav button.on{background:var(--bg);color:var(--ink);opacity:1}
+.hd{max-width:900px;margin:0 auto}
+main{max-width:900px;margin:0 auto;padding:16px}
+h2{font-size:1.15rem;margin:22px 0 10px}h2:first-child{margin-top:4px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(min-width:640px){.stats{grid-template-columns:repeat(4,1fr)}}
+.stat{border-radius:14px;padding:12px 14px}.stat b{display:block;font-size:2rem;font-weight:800;line-height:1.1}.stat span{font-size:.85rem}
+.s-red{background:var(--redbg);color:var(--red)}.s-yel{background:var(--yelbg);color:var(--yel)}.s-grn{background:var(--grnbg);color:var(--grn)}.s-exp{background:var(--expbg);color:var(--exp)}
+.bar{display:flex;height:14px;border-radius:8px;overflow:hidden;background:var(--line);margin:10px 0 6px}
+.bar i{display:block}.legend{font-size:.8rem;color:var(--mut)}
+.row{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);border-left:6px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.row.red{border-left-color:var(--red)}.row.yellow{border-left-color:var(--yel)}.row.green{border-left-color:var(--grn)}.row.expired{border-left-color:var(--exp)}
+.row .nm{font-weight:600;font-size:1.02rem}.row .meta{font-size:.82rem;color:var(--mut)}
+.badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:.8rem;font-weight:600;white-space:nowrap}
+.b-red{background:var(--redbg);color:var(--red)}.b-yellow{background:var(--yelbg);color:var(--yel)}.b-green{background:var(--grnbg);color:var(--grn)}.b-expired{background:var(--expbg);color:var(--exp)}
+.first{background:var(--brand);color:#fff;margin-left:6px}:root:not([data-theme="light"]) .first{color:#0d1f1e}
+.acts{display:flex;gap:6px;flex-wrap:wrap}
+button.sm{font:inherit;font-size:.8rem;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button.sm:hover{border-color:var(--brand)}button.del{color:var(--red)}
+button.pri{font:inherit;font-weight:600;background:var(--brand);color:#fff;border:0;padding:11px 18px;border-radius:10px;cursor:pointer}
+:root:not([data-theme="light"]) button.pri{color:#0d1f1e}
+form{display:grid;gap:12px}label{display:grid;gap:4px;font-weight:600;font-size:.9rem}
+input,select{font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.tools input,.tools select{flex:1;min-width:130px}
+.empty{text-align:center;color:var(--mut);padding:26px 10px}
+.note{font-size:.85rem;color:var(--mut)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.on{opacity:1}
+:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+section{display:none}section.on{display:block}
+</style>
+</head>
+<body>
+<header><div class="hd">
+<h1>Smart Expiry & Wastage Tracker</h1>
+<p id="today"></p>
+<nav id="nav">
+<button data-v="dash" class="on">Dashboard</button><button data-v="prio">Top priority</button><button data-v="list">Product list</button><button data-v="add">Add product</button>
+</nav></div></header>
+<main>
+<section id="dash" class="on"></section>
+<section id="prio"></section>
+<section id="list"></section>
+<section id="add">
+<h2 id="formTitle">Add product</h2>
+<div class="card"><form id="f">
+<label>Product name<input id="name" required placeholder="e.g. Amul Milk 500 ml"></label>
+<div class="two">
+<label>Category<select id="cat"></select></label>
+<label>Quantity<input id="qty" type="number" min="1" required value="1"></label>
+</div>
+<div class="two">
+<label>Expiry date<input id="exp" type="date" required></label>
+<label>Cost per unit (₹, optional)<input id="price" type="number" min="0" step="0.5" placeholder="e.g. 28"></label>
+</div>
+<p class="note" id="hint">Pick a category and the expiry date is suggested from its usual shelf life. You can change it.</p>
+<div class="acts"><button class="pri" type="submit" id="saveBtn">Save product</button><button class="sm" type="button" id="cancel" hidden>Cancel edit</button></div>
+</form></div>
+</section>
+</main>
+<div class="toast" id="toast"></div>
+<script>
+// ---- Settings (change these to adjust colour rules) ----
+const RED_MAX=1, YELLOW_MAX=3; // <=1 day red, 2-3 days yellow, 4+ days green
+const CATS={"Milk":2,"Buttermilk / Lassi":5,"Curd / Dahi":5,"Paneer":7,"Bread":4,"Biscuits & snacks":90,"Beverages":120,"Other":0};
+const KEY="expiry-tracker-v1";
+let db={products:[],log:[]},editId=null;
+try{const s=localStorage.getItem(KEY);if(s)db=JSON.parse(s)}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const midnight=d=>{const x=new Date(d);x.setHours(0,0,0,0);return x};
+const iso=d=>{const x=new Date(d);return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0")};
+const daysLeft=p=>Math.round((midnight(p.expiry+"T00:00")-midnight(new Date()))/864e5);
+function st(p){const d=daysLeft(p);
+ if(d<0)return{c:"expired",t:d===-1?"Expired yesterday":"Expired "+(-d)+" days ago",d};
+ if(d===0)return{c:"red",t:"Expires today",d};
+ if(d===1)return{c:"red",t:"Expires tomorrow",d};
+ return{c:d<=YELLOW_MAX?"yellow":"green",t:d+(d<=YELLOW_MAX?" days to expire":" days left"),d}}
+const sorted=a=>[...a].sort((x,y)=>daysLeft(x)-daysLeft(y));
+const money=n=>"₹"+Math.round(n).toLocaleString("en-IN");
+function sellFirstIds(){const g={};db.products.forEach(p=>{if(daysLeft(p)>=0)(g[p.name.trim().toLowerCase()]??=[]).push(p)});
+ const s=new Set();Object.values(g).forEach(a=>{if(a.length>1)s.add(sorted(a)[0].id)});return s}
+function toast(m){const t=$("toast");t.textContent=m;t.classList.add("on");setTimeout(()=>t.classList.remove("on"),2200)}
+
+function rowHtml(p,first,acts=true){const s=st(p),fmt=new Date(p.expiry+"T00:00").toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"});
+ return `<div class="row ${s.c}"><div><div class="nm">${esc(p.name)}${first?'<span class="badge first">Sell first</span>':''}</div>
+ <div class="meta">${esc(p.cat)} · Qty ${p.qty} · Expiry ${fmt}</div></div>
+ <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="badge b-${s.c}">${s.t}</span>
+ ${acts?`<div class="acts">${s.d<0?`<button class="sm" data-a="waste" data-id="${p.id}">Discard as waste</button>`:`<button class="sm" data-a="sold" data-id="${p.id}">Sold out</button>`}
+ <button class="sm" data-a="edit" data-id="${p.id}">Edit</button><button class="sm del" data-a="del" data-id="${p.id}">Delete</button></div>`:""}</div></div>`}
+
+function renderDash(){const P=db.products,n={red:0,yellow:0,green:0,expired:0};P.forEach(p=>n[st(p).c]++);
+ const tot=P.length||1,w=db.log.filter(l=>l.type==="waste"),wu=w.reduce((a,l)=>a+l.qty,0),wv=w.reduce((a,l)=>a+l.value,0);
+ const sv=db.log.filter(l=>l.type==="sold").reduce((a,l)=>a+l.qty,0);
+ const urgent=sorted(P).filter(p=>daysLeft(p)<=RED_MAX).slice(0,4),fs=sellFirstIds();
+ $("dash").innerHTML=`<h2>Today at a glance</h2>
+ <div class="stats"><div class="stat s-red"><b>${n.red}</b><span>Expiring in 0–1 day</span></div><div class="stat s-yel"><b>${n.yellow}</b><span>Expiring in 2–3 days</span></div><div class="stat s-grn"><b>${n.green}</b><span>Fresh stock</span></div><div class="stat s-exp"><b>${n.expired}</b><span>Already expired</span></div></div>
+ <div class="card" style="margin-top:10px"><b>${P.length} batches in stock</b>
+ <div class="bar"><i style="width:${n.expired/tot*100}%;background:var(--exp)"></i><i style="width:${n.red/tot*100}%;background:var(--red)"></i><i style="width:${n.yellow/tot*100}%;background:var(--yel)"></i><i style="width:${n.green/tot*100}%;background:var(--grn)"></i></div>
+ <div class="legend">Grey expired · Red 0–1 day · Yellow 2–3 days · Green 4+ days</div></div>
+ <h2>Needs action now</h2>${urgent.length?urgent.map(p=>rowHtml(p,fs.has(p.id))).join(""):'<div class="card empty">Nothing is urgent. Good job.</div>'}
+ <h2>Wastage report</h2><div class="card"><div class="stats" style="grid-template-columns:repeat(3,1fr)">
+ <div><b style="font-size:1.6rem">${wu}</b><div class="note">units wasted</div></div><div><b style="font-size:1.6rem">${money(wv)}</b><div class="note">estimated loss</div></div><div><b style="font-size:1.6rem">${sv}</b><div class="note">units sold out</div></div></div>
+ <p class="note" style="margin-bottom:0">Loss is counted when you press “Discard as waste” on an expired product with a cost entered.</p></div>
+ ${P.length?"":'<p style="margin-top:14px"><button class="pri" id="demo">Load sample dairy products</button></p>'}`;
+ const d=$("demo");if(d)d.onclick=loadDemo}
+
+function renderPrio(){const P=sorted(db.products).filter(p=>daysLeft(p)<=YELLOW_MAX),fs=sellFirstIds();
+ $("prio").innerHTML=`<h2>Top priority</h2><p class="note">Expired items first, then everything expiring within ${YELLOW_MAX} days, most urgent on top. Sell the “Sell first” batch before newer ones.</p>`+
+ (P.length?P.map(p=>rowHtml(p,fs.has(p.id))).join(""):'<div class="card empty">No products are close to expiry.</div>')}
+
+let q="",fc="",fs2="";
+function renderList(){const fs=sellFirstIds();
+ let P=sorted(db.products).filter(p=>p.name.toLowerCase().includes(q.toLowerCase())&&(!fc||p.cat===fc)&&(!fs2||st(p).c===fs2));
+ $("list").innerHTML=`<h2>Product list</h2><div class="tools"><input id="q" placeholder="Search product" value="${esc(q)}">
+ <select id="fc"><option value="">All categories</option>${Object.keys(CATS).map(c=>`<option ${c===fc?"selected":""}>${c}</option>`).join("")}</select>
+ <select id="fs"><option value="">All status</option>${[["red","Red"],["yellow","Yellow"],["green","Green"],["expired","Expired"]].map(([v,l])=>`<option value="${v}" ${v===fs2?"selected":""}>${l}</option>`).join("")}</select></div>`+
+ (P.length?P.map(p=>rowHtml(p,fs.has(p.id))).join(""):`<div class="card empty">${db.products.length?"No products match.":"No products yet. Add your first one."}</div>`);
+ const re=()=>{q=$("q").value;fc=$("fc").value;fs2=$("fs").value;const pos=$("q").selectionStart;renderList();$("q").focus();$("q").setSelectionRange(pos,pos)};
+ $("q").oninput=re;$("fc").onchange=re;$("fs").onchange=re}
+
+function renderAll(){renderDash();renderPrio();renderList()}
+function show(v){document.querySelectorAll("section").forEach(s=>s.classList.toggle("on",s.id===v));
+ document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));window.scrollTo(0,0)}
+$("nav").onclick=e=>{const v=e.target.dataset.v;if(v){if(v!=="add")resetForm();show(v)}};
+
+$("cat").innerHTML=Object.keys(CATS).map(c=>`<option>${c}</option>`).join("");
+$("cat").onchange=()=>{const d=CATS[$("cat").value];if(d&&!editId){const x=new Date();x.setDate(x.getDate()+d);$("exp").value=iso(x);$("hint").textContent="Suggested "+d+"-day shelf life. Check the printed date on the pack and correct it if needed."}};
+function resetForm(){editId=null;$("f").reset();$("qty").value=1;$("formTitle").textContent="Add product";$("saveBtn").textContent="Save product";$("cancel").hidden=true}
+$("cancel").onclick=()=>{resetForm();show("list")};
+$("f").onsubmit=e=>{e.preventDefault();
+ const o={name:$("name").value.trim(),cat:$("cat").value,qty:+$("qty").value,expiry:$("exp").value,price:+$("price").value||0};
+ if(!o.name||!o.expiry||o.qty<1)return;
+ if(editId){Object.assign(db.products.find(p=>p.id===editId),o);toast("Product updated")}
+ else{db.products.push({id:Date.now()+Math.random().toString(36).slice(2,6),...o});toast("Product added")}
+ save();resetForm();renderAll();show(daysLeft(o)<=YELLOW_MAX?"prio":"list")};
+
+document.addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(!b)return;
+ const p=db.products.find(x=>x.id===b.dataset.id),a=b.dataset.a;if(!p)return;
+ if(a==="edit"){editId=p.id;$("name").value=p.name;$("cat").value=p.cat;$("qty").value=p.qty;$("exp").value=p.expiry;$("price").value=p.price||"";
+  $("formTitle").textContent="Edit product";$("saveBtn").textContent="Update product";$("cancel").hidden=false;show("add");return}
+ if(a==="del"){if(!confirm("Delete “"+p.name+"”? This will not be counted as sold or wasted."))return;toast("Deleted")}
+ if(a==="sold"){db.log.push({type:"sold",name:p.name,qty:p.qty,value:0,date:iso(new Date())});toast("Marked as sold out")}
+ if(a==="waste"){db.log.push({type:"waste",name:p.name,qty:p.qty,value:p.qty*(p.price||0),date:iso(new Date())});toast("Recorded as wastage")}
+ db.products=db.products.filter(x=>x.id!==p.id);save();renderAll()});
+
+function loadDemo(){const a=(n,c,q,d,pr)=>{const x=new Date();x.setDate(x.getDate()+d);db.products.push({id:Math.random().toString(36).slice(2),name:n,cat:c,qty:q,expiry:iso(x),price:pr})};
+ a("Milk pouch 500 ml","Milk",24,0,28);a("Milk pouch 500 ml","Milk",30,1,28);a("Paneer 200 g","Paneer",10,2,85);a("Lassi cup","Buttermilk / Lassi",12,3,25);
+ a("Curd cup 400 g","Curd / Dahi",15,5,40);a("Taak pouch","Buttermilk / Lassi",20,6,15);a("Bread loaf","Bread",8,-1,40);a("Biscuits","Biscuits & snacks",40,60,10);
+ save();renderAll()}
+
+$("today").textContent=new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+renderAll();
+</script>
+</body>
+</html>
